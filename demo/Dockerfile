@@ -12,4 +12,4 @@ RUN ./gradlew bootJar
 
 EXPOSE 8080
 # 포트는 Render 기본값인 10000으로 잡힐 수 있으니 8080으로 강제 고정합니다.
-ENTRYPOINT ["java", "-Xmx512m", "-Dserver.port=8080", "-jar", "build/libs/*.jar"]
+ENTRYPOINT ["sh", "-c", "java -Xmx512m -Dserver.port=8080 -jar build/libs/*.jar"]
