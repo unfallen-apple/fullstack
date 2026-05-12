@@ -60,8 +60,17 @@ public class SecurityConfig {
             frontendEnv = "http://localhost:3000,https://junyoungkim.vercel.app";
         }
         String[] origins = frontendEnv.split("\\s*,\\s*");
-        java.util.List<String> allowed = new java.util.ArrayList<>(Arrays.asList(origins));
-        
+        java.util.List<String> allowed = new java.util.ArrayList<>();
+        for (String o : origins) {
+            String v = o.trim();
+            if (v.isEmpty()) continue;
+            // If scheme missing, assume https
+            if (!v.startsWith("http://") && !v.startsWith("https://")) {
+                v = "https://" + v;
+            }
+            allowed.add(v);
+        }
+
         System.out.println("[CORS Config] Allowed origins: " + allowed);
         configuration.setAllowedOrigins(allowed);  // Use setAllowedOrigins for exact matching
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
