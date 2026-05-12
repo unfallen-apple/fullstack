@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 function App() {
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+
   // --- [상태 관리] ---
   const [projects, setProjects] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -28,13 +30,13 @@ function App() {
   // --- [데이터 가져오기] ---
   const fetchData = () => {
     // 프로필 정보 로드
-    fetch("http://localhost:8080/api/profile")
+    fetch(`${API_BASE_URL}/api/profile`)
       .then(res => res.json())
       .then(data => setMyInfo(data))
       .catch(err => console.error("프로필 로드 실패:", err));
 
     // 프로젝트 목록 로드 (순서 정렬)
-    fetch("http://localhost:8080/api/projects")
+    fetch(`${API_BASE_URL}/api/projects`)
       .then(res => res.json())
       .then(data => setProjects(data.sort((a, b) => a.seq - b.seq)))
       .catch(err => console.error("프로젝트 로드 실패:", err));
@@ -54,7 +56,7 @@ function App() {
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     const header = 'Basic ' + btoa(adminUser + ':' + adminPass);
-    fetch('http://localhost:8080/api/admin/verify', { headers: { Authorization: header } })
+    fetch(`${API_BASE_URL}/api/admin/verify`, { headers: { Authorization: header } })
       .then(res => {
         if (res.ok) {
           setIsAdmin(true);
@@ -83,7 +85,7 @@ function App() {
   const handleProfileSave = () => {
     // 1. 텍스트 정보 먼저 업데이트
     const authHeaders = authHeader ? { Authorization: authHeader } : {};
-    fetch("http://localhost:8080/api/profile", {
+    fetch(`${API_BASE_URL}/api/profile`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify(myInfo)
@@ -94,7 +96,7 @@ function App() {
       if (profileFile) {
         const fileData = new FormData();
         fileData.append("file", profileFile);
-        fetch(`http://localhost:8080/api/profile/${savedProfile.id}/upload`, {
+        fetch(`${API_BASE_URL}/api/profile/${savedProfile.id}/upload`, {
           method: "POST",
           headers: authHeader ? { Authorization: authHeader } : {},
           body: fileData
@@ -122,7 +124,7 @@ function App() {
     setProjects(items);
 
     const idList = items.map(p => p.id);
-    fetch("http://localhost:8080/api/projects/reorder", {
+    fetch(`${API_BASE_URL}/api/projects/reorder`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", ...(authHeader ? { Authorization: authHeader } : {}) },
       body: JSON.stringify(idList)
@@ -132,7 +134,7 @@ function App() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const method = editingId ? "PUT" : "POST";
-    const url = editingId ? `http://localhost:8080/api/projects/${editingId}` : "http://localhost:8080/api/projects";
+    const url = editingId ? `${API_BASE_URL}/api/projects/${editingId}` : `${API_BASE_URL}/api/projects`;
 
     fetch(url, {
       method: method,
@@ -144,7 +146,7 @@ function App() {
       if (selectedFile) {
         const fileData = new FormData();
         fileData.append("file", selectedFile);
-        fetch(`http://localhost:8080/api/projects/${saved.id}/upload`, { method: "POST", headers: authHeader ? { Authorization: authHeader } : {}, body: fileData })
+        fetch(`${API_BASE_URL}/api/projects/${saved.id}/upload`, { method: "POST", headers: authHeader ? { Authorization: authHeader } : {}, body: fileData })
           .then(() => { alert("프로젝트 저장 완료!"); finishSubmit(); });
       } else {
         alert("프로젝트 저장 완료!");
@@ -155,7 +157,7 @@ function App() {
 
   const handleDelete = (id) => {
     if (window.confirm("정말 삭제하시겠습니까?")) {
-      fetch(`http://localhost:8080/api/projects/${id}`, { method: "DELETE", headers: authHeader ? { Authorization: authHeader } : {} }).then(() => fetchData());
+      fetch(`${API_BASE_URL}/api/projects/${id}`, { method: "DELETE", headers: authHeader ? { Authorization: authHeader } : {} }).then(() => fetchData());
     }
   };
 
@@ -205,7 +207,7 @@ function App() {
             <div className="col-md-3 text-center mb-4 mb-md-0 position-relative">
               <div className="position-relative d-inline-block">
                 <img 
-                  src={profilePreview || (myInfo.profileImg ? `http://localhost:8080${myInfo.profileImg}` : "https://via.placeholder.com/180")} 
+                  src={profilePreview || (myInfo.profileImg ? `${API_BASE_URL}${myInfo.profileImg}` : "https://via.placeholder.com/180")} 
                   alt="Profile" 
                   className="rounded-circle shadow border border-5 border-light" 
                   style={{ width: '180px', height: '180px', objectFit: 'cover' }}
@@ -287,7 +289,7 @@ function App() {
                       <div className="col" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                         <div className={`card h-100 border-0 shadow-sm rounded-4 overflow-hidden ${snapshot.isDragging ? 'shadow-lg border-primary border' : ''}`} style={{ transition: '0.3s' }}>
                           <div style={{ height: '160px', backgroundColor: '#f8f9fa' }}>
-                            {p.imageUrl ? <img src={`http://localhost:8080${p.imageUrl}`} className="w-100 h-100" style={{ objectFit: 'cover' }} alt="" /> : <div className="d-flex align-items-center justify-content-center h-100 text-muted small">No Image</div>}
+                            {p.imageUrl ? <img src={`${API_BASE_URL}${p.imageUrl}`} className="w-100 h-100" style={{ objectFit: 'cover' }} alt="" /> : <div className="d-flex align-items-center justify-content-center h-100 text-muted small">No Image</div>}
                           </div>
                           <div className="card-body p-3 d-flex flex-column">
                             <h6 className="card-title fw-bold mb-2 text-truncate">{p.title}</h6>
