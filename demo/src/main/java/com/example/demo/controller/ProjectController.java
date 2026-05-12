@@ -1,6 +1,8 @@
 package com.example.demo.controller;
-
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -10,7 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.entity.Project;
 import com.example.demo.repository.ProjectRepository;
@@ -61,5 +65,27 @@ public class ProjectController {
         // 3. 다시 저장(업데이트)합니다.
         return projectRepository.save(project);
     }
+
+    @PostMapping("/{id}/upload")
+    public Project uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("프로젝트를 찾을 수 없습니다."));
+
+        // 1. 파일을 저장할 경로 설정 (실행 환경에 맞게 수정 필요)
+        String uploadDir = System.getProperty("user.dir") + "/uploads/";
+        File dir = new File(uploadDir);
+        if (!dir.exists()) dir.mkdirs(); // 폴더가 없으면 생성
+
+        // 2. 파일 이름 중복 방지를 위해 UUID 생성
+        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        File dest = new File(uploadDir + fileName);
+
+        // 3. 실제 폴더에 파일 저장
+        file.transferTo(dest);
+
+        // 4. DB에는 파일명(혹은 경로)만 저장
+        project.setImageUrl("/uploads/" + fileName);
+        return projectRepository.save(project);
     }
+}
 
