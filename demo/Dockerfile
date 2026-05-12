@@ -1,11 +1,15 @@
-# 기존 FROM openjdk:21-jdk-slim 대신 아래 줄을 넣으세요.
 FROM amazoncorretto:21-al2023-jdk
 
-# 나머지는 그대로 두시면 됩니다.
 WORKDIR /app
+
+# [추가] Gradle 빌드에 필요한 xargs(findutils)를 설치합니다.
+RUN yum install -y findutils
+
 COPY . .
+
 RUN chmod +x gradlew
 RUN ./gradlew bootJar
 
 EXPOSE 8080
+# 포트는 Render 기본값인 10000으로 잡힐 수 있으니 8080으로 강제 고정합니다.
 ENTRYPOINT ["java", "-Xmx512m", "-Dserver.port=8080", "-jar", "build/libs/*.jar"]
