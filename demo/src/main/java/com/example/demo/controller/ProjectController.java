@@ -87,5 +87,15 @@ public class ProjectController {
         project.setImageUrl("/uploads/" + fileName);
         return projectRepository.save(project);
     }
+    
+    @PutMapping("/reorder")
+    public void reorderProjects(@RequestBody List<Long> projectIds) {
+        for (int i = 0; i < projectIds.size(); i++) {
+            Project project = projectRepository.findById(projectIds.get(i))
+                    .orElseThrow(() -> new RuntimeException("프로젝트 없음"));
+            project.setSeq(i); // 리스트에 담긴 순서대로 0, 1, 2... 순서를 부여
+            projectRepository.save(project);
+        }
+    }
 }
 

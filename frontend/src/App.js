@@ -1,175 +1,229 @@
 import React, { useState, useEffect } from 'react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 function App() {
   const [projects, setProjects] = useState([]);
-  const [title, setTitle] = useState('');
-  const [techStack, setTechStack] = useState('');
-  const [description, setDescription] = useState('');
-  const [editingId, setEditingId] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-
-  // [추가] 파일 선택 상태를 관리하기 위한 변수
+  
+  const [formData, setFormData] = useState({
+    title: '', techStack: '', description: '', linkUrl: '', longDescription: ''
+  });
+  const [editingId, setEditingId] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [showDetail, setShowDetail] = useState(null); 
 
+  // 프로젝트 목록 가져오기 (순서대로 정렬해서 가져오는 것이 중요)
   const fetchProjects = () => {
     fetch("http://localhost:8080/api/projects")
       .then(res => res.json())
-      .then(data => setProjects(data));
+      .then(data => {
+        // 서버에서 seq 순으로 정렬해서 주지 않는다면 프론트에서 정렬
+        const sortedData = data.sort((a, b) => a.seq - b.seq);
+        setProjects(sortedData);
+      })
+      .catch(err => console.error("로딩 실패:", err));
   };
 
   useEffect(() => { fetchProjects(); }, []);
 
-  // [추가] 파일 선택 시 상태 업데이트 함수
-  const handleFileChange = (e) => {
-    setSelectedFile(e.target.files[0]);
+  // [핵심] 드래그가 끝났을 때 실행되는 함수
+  const onDragEnd = (result) => {
+    if (!result.destination) return; // 리스트 밖으로 드롭한 경우
+
+    const items = Array.from(projects);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setProjects(items); // 화면 순서 즉시 변경
+
+    // 서버에 바뀐 ID 리스트 전송하여 순서(seq) 업데이트
+    const idList = items.map(p => p.id);
+    fetch("http://localhost:8080/api/projects/reorder", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(idList)
+    }).then(() => console.log("순서 저장 완료"));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const projectData = { title, techStack, description };
-    
-    // 수정이면 PUT, 등록이면 POST
     const method = editingId ? "PUT" : "POST";
     const url = editingId ? `http://localhost:8080/api/projects/${editingId}` : "http://localhost:8080/api/projects";
 
-    // 1단계: 텍스트 정보 먼저 서버에 저장
     fetch(url, {
       method: method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(projectData)
+      body: JSON.stringify(formData)
     })
     .then(res => res.json())
-    .then(savedProject => {
-      // 2단계: 저장된 프로젝트의 ID를 받아온 후, 파일이 있다면 이미지 업로드 진행
+    .then(saved => {
       if (selectedFile) {
-        const formData = new FormData();
-        formData.append("file", selectedFile); // 서버의 @RequestParam("file")과 이름이 같아야 함
-
-        fetch(`http://localhost:8080/api/projects/${savedProject.id}/upload`, {
-          method: "POST",
-          body: formData // 파일은 JSON이 아니라 FormData로 보냄
-        })
-        .then(() => {
-          alert(editingId ? "수정 및 이미지 업로드 완료!" : "이미지 포함 등록 완료!");
-          finishSubmit();
-        });
+        const fileData = new FormData();
+        fileData.append("file", selectedFile);
+        fetch(`http://localhost:8080/api/projects/${saved.id}/upload`, { method: "POST", body: fileData })
+          .then(() => { alert("저장 완료!"); finishSubmit(); });
       } else {
-        alert(editingId ? "수정 완료!" : "등록 완료!");
+        alert("저장 완료!");
         finishSubmit();
       }
-    })
-    .catch(err => console.error("오류 발생:", err));
-  };
-
-  const finishSubmit = () => {
-    resetForm();
-    fetchProjects();
-    setSelectedFile(null); // 파일 선택 초기화
+    });
   };
 
   const handleDelete = (id) => {
     if (window.confirm("정말 삭제하시겠습니까?")) {
       fetch(`http://localhost:8080/api/projects/${id}`, { method: "DELETE" })
-      .then(() => {
-        alert("삭제되었습니다.");
-        fetchProjects();
-      });
+      .then(() => fetchProjects());
     }
+  };
+
+  const finishSubmit = () => {
+    setFormData({ title: '', techStack: '', description: '', linkUrl: '', longDescription: '' });
+    setEditingId(null); setSelectedFile(null); fetchProjects();
   };
 
   const startEdit = (p) => {
     setEditingId(p.id);
-    setTitle(p.title);
-    setTechStack(p.techStack);
-    setDescription(p.description);
+    setFormData({
+      title: p.title || '', techStack: p.techStack || '',
+      description: p.description || '', linkUrl: p.linkUrl || '',
+      longDescription: p.longDescription || ''
+    });
     window.scrollTo(0, 0);
   };
 
-  const resetForm = () => {
-    setEditingId(null);
-    setTitle(''); setTechStack(''); setDescription('');
-    setSelectedFile(null);
-  };
-
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      
-      <div style={{ textAlign: 'right', marginBottom: '20px' }}>
-        <button 
-          onClick={() => setIsAdmin(!isAdmin)}
-          style={{
-            backgroundColor: isAdmin ? '#4CAF50' : '#666',
-            color: 'white', border: 'none', padding: '10px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold'
-          }}
-        >
-          {isAdmin ? "🔓 관리자 모드 ON" : "🔒 일반 사용자 모드"}
-        </button>
-      </div>
-
-      <h1 style={{ textAlign: 'center', color: '#333' }}>My Portfolio</h1>
-      
-      {isAdmin && (
-        <div style={{ backgroundColor: '#f4f7f6', padding: '20px', borderRadius: '10px', marginBottom: '40px', border: '1px dashed #4CAF50' }}>
-          <h2>{editingId ? "🛠️ 프로젝트 수정" : "➕ 새 프로젝트 추가"}</h2>
-          <form onSubmit={handleSubmit}>
-            <input 
-              style={{ width: '100%', padding: '10px', marginBottom: '10px', boxSizing: 'border-box' }}
-              type="text" placeholder="제목" value={title} onChange={(e) => setTitle(e.target.value)} required 
-            /><br/>
-            <input 
-              style={{ width: '100%', padding: '10px', marginBottom: '10px', boxSizing: 'border-box' }}
-              type="text" placeholder="기술 스택" value={techStack} onChange={(e) => setTechStack(e.target.value)} 
-            /><br/>
-            
-            {/* [추가] 이미지 첨부 버튼 */}
-            <div style={{ marginBottom: '10px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>프로젝트 대표 이미지:</label>
-              <input type="file" onChange={handleFileChange} accept="image/*" />
-            </div>
-
-            <textarea 
-              style={{ width: '100%', padding: '10px', marginBottom: '10px', height: '100px', boxSizing: 'border-box' }}
-              placeholder="설명" value={description} onChange={(e) => setDescription(e.target.value)} 
-            /><br/>
-            
-            <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-              {editingId ? "수정 완료" : "등록하기"}
-            </button>
-            {editingId && <button onClick={resetForm} type="button" style={{ marginLeft: '10px' }}>취소</button>}
-          </form>
+    <div className="bg-light min-vh-100 pb-5">
+      <nav className="navbar navbar-dark bg-dark sticky-top shadow-sm mb-4">
+        <div className="container">
+          <span className="navbar-brand fw-bold">🚀 MY PORTFOLIO</span>
+          <button className={`btn btn-sm ${isAdmin ? 'btn-success' : 'btn-outline-light'}`} onClick={() => setIsAdmin(!isAdmin)}>
+            {isAdmin ? "🔓 ADMIN MODE ON" : "🔒 VIEW MODE"}
+          </button>
         </div>
-      )}
+      </nav>
 
-      <hr style={{ margin: '40px 0', border: '0.5px solid #eee' }} />
+      <div className="container">
+        {isAdmin && (
+          <div className="card shadow-sm mb-5 border-0 rounded-4">
+            <div className="card-body p-4">
+              <h5 className="mb-4 fw-bold text-primary">{editingId ? "🛠️ 프로젝트 수정" : "➕ 새 프로젝트 등록"}</h5>
+              <form onSubmit={handleSubmit} className="row g-3">
+                <div className="col-md-4">
+                  <input type="text" className="form-control" placeholder="제목" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required />
+                </div>
+                <div className="col-md-4">
+                  <input type="text" className="form-control" placeholder="기술 스택" value={formData.techStack} onChange={e => setFormData({...formData, techStack: e.target.value})} />
+                </div>
+                <div className="col-md-4">
+                  <input type="url" className="form-control" placeholder="링크 (https://...)" value={formData.linkUrl} onChange={e => setFormData({...formData, linkUrl: e.target.value})} />
+                </div>
+                <div className="col-12">
+                  <textarea className="form-control" placeholder="짧은 요약" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                </div>
+                <div className="col-12">
+                  <textarea className="form-control" rows="3" placeholder="상세 내용" value={formData.longDescription} onChange={e => setFormData({...formData, longDescription: e.target.value})} />
+                </div>
+                <div className="col-md-6">
+                  <input type="file" className="form-control" onChange={e => setSelectedFile(e.target.files[0])} />
+                </div>
+                <div className="col-12">
+                  <button type="submit" className="btn btn-primary px-4 fw-bold">저장하기</button>
+                  {editingId && <button type="button" className="btn btn-outline-secondary ms-2" onClick={finishSubmit}>취소</button>}
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
-      <div style={{ display: 'flex', gap: '25px', flexWrap: 'wrap', justifyContent: 'center' }}>
-        {projects.map(p => (
-          <div key={p.id} style={{ 
-            border: '1px solid #ddd', padding: '20px', width: '300px', borderRadius: '15px', 
-            boxShadow: '0 4px 8px rgba(0,0,0,0.05)', backgroundColor: 'white', overflow: 'hidden'
-          }}>
-            {/* [추가] 이미지가 있다면 출력 */}
-            {p.imageUrl && (
-              <img 
-                src={`http://localhost:8080${p.imageUrl}`} 
-                alt="project" 
-                style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '10px', marginBottom: '15px' }} 
-              />
-            )}
-            
-            <h3 style={{ color: '#2c3e50', marginBottom: '10px' }}>{p.title}</h3>
-            <p style={{ fontSize: '0.85rem', color: '#16a085', fontWeight: 'bold' }}>#{p.techStack}</p>
-            <p style={{ color: '#666', lineHeight: '1.6' }}>{p.description}</p>
-            
-            {isAdmin && (
-              <div style={{ marginTop: '20px', display: 'flex', gap: '10px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-                <button onClick={() => startEdit(p)} style={{ flex: 1, padding: '7px', cursor: 'pointer' }}>수정</button>
-                <button onClick={() => handleDelete(p.id)} style={{ flex: 1, padding: '7px', backgroundColor: '#ff4d4d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>삭제</button>
+        {/* 3. 드래그 앤 드롭 영역 */}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="projects-grid" direction="horizontal">
+            {(provided) => (
+              <div 
+                className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4"
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+              >
+                {projects.map((p, index) => (
+                  <Draggable key={p.id} draggableId={String(p.id)} index={index} isDragDisabled={!isAdmin}>
+                    {(provided, snapshot) => (
+                      <div 
+                        className="col"
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps} // 카드 전체를 핸들로 사용
+                        style={{ ...provided.draggableProps.style, opacity: snapshot.isDragging ? 0.8 : 1 }}
+                      >
+                        <div className="card h-100 border-0 shadow-sm hover-shadow rounded-4 overflow-hidden position-relative">
+                          {/* 관리자일 때 드래그 힌트 아이콘 */}
+                          {isAdmin && (
+                            <div className="position-absolute top-0 end-0 m-2 badge bg-dark opacity-50">⠿ Drag</div>
+                          )}
+                          
+                          <div style={{ height: '150px', backgroundColor: '#e9ecef' }}>
+                            {p.imageUrl ? (
+                              <img src={`http://localhost:8080${p.imageUrl}`} className="w-100 h-100" style={{ objectFit: 'cover' }} alt="" />
+                            ) : (
+                              <div className="d-flex align-items-center justify-content-center h-100 text-muted small">No Image</div>
+                            )}
+                          </div>
+
+                          <div className="card-body p-3 d-flex flex-column">
+                            <h6 className="card-title fw-bold mb-1 text-truncate">{p.title}</h6>
+                            <div className="mb-2">
+                              <span className="badge rounded-pill bg-light text-primary border border-primary-subtle" style={{ fontSize: '0.65rem' }}>
+                                {p.techStack || 'Stack'}
+                              </span>
+                            </div>
+                            <p className="card-text text-muted mb-3" style={{ fontSize: '0.8rem', flexGrow: 1, height: '40px', overflow: 'hidden' }}>
+                              {p.description}
+                            </p>
+                            
+                            <div className="d-flex gap-2">
+                              <button className="btn btn-dark btn-sm flex-fill" onClick={() => setShowDetail(p)}>자세히 보기</button>
+                              {p.linkUrl && <a href={p.linkUrl} target="_blank" rel="noreferrer" className="btn btn-outline-dark btn-sm flex-fill">링크</a>}
+                            </div>
+                          </div>
+
+                          {isAdmin && (
+                            <div className="card-footer bg-white border-0 d-flex gap-1 pb-3">
+                              <button className="btn btn-light btn-sm flex-fill border" onClick={() => startEdit(p)}>수정</button>
+                              <button className="btn btn-light text-danger btn-sm flex-fill border" onClick={() => handleDelete(p.id)}>삭제</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
               </div>
             )}
-          </div>
-        ))}
+          </Droppable>
+        </DragDropContext>
       </div>
+
+      {/* 4. 상세 보기 모달 */}
+      {showDetail && (
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content border-0 shadow-lg rounded-4">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">{showDetail.title}</h5>
+                <button className="btn-close" onClick={() => setShowDetail(null)}></button>
+              </div>
+              <div className="modal-body p-4">
+                <div className="bg-light p-3 rounded-3" style={{ whiteSpace: 'pre-wrap' }}>
+                  {showDetail.longDescription || "상세 설명이 없습니다."}
+                </div>
+              </div>
+              <div className="modal-footer border-0">
+                <button className="btn btn-secondary px-4" onClick={() => setShowDetail(null)}>닫기</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

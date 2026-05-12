@@ -42,4 +42,10 @@ public class Project {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    private String linkUrl;
+    @Column(columnDefinition = "TEXT")
+    private String longDescription; // 상세 페이지용 긴 설명
+
+    private int seq; // 순서를 결정하는 필드
 }
