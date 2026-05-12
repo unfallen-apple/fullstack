@@ -56,8 +56,8 @@ public class SecurityConfig {
         // Use exact frontend domain(s) separated by commas, or set FRONTEND_URL env var.
         String frontendEnv = System.getenv("FRONTEND_URL");
         if (frontendEnv == null || frontendEnv.isBlank()) {
-            // Default: local dev + current production Vercel domain
-            frontendEnv = "http://localhost:3000,https://fullstack-m0uxv9zzw-junyoungkims-projects.vercel.app";
+            // Default: local dev + fixed production Vercel custom domain
+            frontendEnv = "http://localhost:3000,https://junyoungkim.vercel.app";
         }
         String[] origins = frontendEnv.split("\\s*,\\s*");
         java.util.List<String> allowed = new java.util.ArrayList<>(Arrays.asList(origins));
