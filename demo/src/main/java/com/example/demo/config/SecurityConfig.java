@@ -30,6 +30,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable());
 
         http.authorizeHttpRequests(auth -> auth
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/profile", "/api/projects/**", "/uploads/**", "/actuator/health", "/actuator/info").permitAll()
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
             .requestMatchers("/api/**").hasRole("ADMIN")
@@ -51,11 +52,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow frontend origin from env var FRONTEND_URL (can be comma-separated), default to localhost:3000
+        // Allow frontend origin from env var FRONTEND_URL (can be comma-separated).
+        // Use exact origins like https://your-app.vercel.app or patterns like https://*.vercel.app.
         String frontendEnv = System.getenv("FRONTEND_URL");
         if (frontendEnv == null || frontendEnv.isBlank()) frontendEnv = "http://localhost:3000";
         String[] origins = frontendEnv.split("\\s*,\\s*");
-        configuration.setAllowedOrigins(Arrays.asList(origins));
+        configuration.setAllowedOriginPatterns(Arrays.asList(origins));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
