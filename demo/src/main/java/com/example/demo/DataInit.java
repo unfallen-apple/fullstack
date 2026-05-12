@@ -1,24 +1,26 @@
-// package com.example.demo;
+package com.example.demo;
 
-// import com.example.demo.entity.Project;
-// import com.example.demo.repository.ProjectRepository;
-// import org.springframework.boot.CommandLineRunner;
-// import org.springframework.context.annotation.Bean;
-// import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-// // @Configuration
-// // public class DataInit {
+import com.example.demo.service.AdminService;
 
-// //     @Bean
-// //     CommandLineRunner initData(ProjectRepository repository) {
-// //         return args -> {
-// //             Project p = new Project();
-// //             p.setTitle("나의 첫 포트폴리오");
-// //             p.setTechStack("React, Spring Boot");
-// //             p.setDescription("열심히 만드는 중입니다.");
-            
-// //             repository.save(p); // DB에 저장!
-// //             System.out.println("데이터 저장 완료!");
-// //         };
-// //     }
-// // }
+@Configuration
+public class DataInit {
+
+    @Bean
+    CommandLineRunner initData(AdminService adminService) {
+        return args -> {
+            // 관리자 계정이 없으면 초기 계정 생성
+            if (!adminService.adminExists()) {
+                adminService.createAdmin("vhxmvhffldh", "dlrjgozldehlskdy+1");
+                System.out.println("✅ 초기 관리자 계정 생성 완료!");
+                System.out.println("   ID: vhxmvhffldh");
+                System.out.println("   Password: dlrjgozldehlskdy+1");
+            } else {
+                System.out.println("✅ 관리자 계정이 이미 존재합니다.");
+            }
+        };
+    }
+}

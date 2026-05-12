@@ -5,6 +5,10 @@ function App() {
   // --- [상태 관리] ---
   const [projects, setProjects] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [adminUser, setAdminUser] = useState('');
+  const [adminPass, setAdminPass] = useState('');
+  const [authHeader, setAuthHeader] = useState(null);
   
   // 프로필 관련 상태
   const [myInfo, setMyInfo] = useState({
@@ -38,6 +42,32 @@ function App() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const handleAdminToggle = () => {
+    if (isAdmin) {
+      setIsAdmin(false);
+      setAuthHeader(null);
+    } else {
+      setShowLoginModal(true);
+    }
+  };
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    const header = 'Basic ' + btoa(adminUser + ':' + adminPass);
+    fetch('http://localhost:8080/api/admin/verify', { headers: { Authorization: header } })
+      .then(res => {
+        if (res.ok) {
+          setIsAdmin(true);
+          setAuthHeader(header);
+          setShowLoginModal(false);
+          setAdminUser(''); setAdminPass('');
+        } else {
+          alert('인증에 실패했습니다. 계정 정보를 확인하세요.');
+        }
+      })
+      .catch(err => { console.error(err); alert('인증 에러'); });
+  };
+
   // --- [프로필 관리 로직] ---
   
   // 프로필 사진 선택 시 미리보기 생성
@@ -52,9 +82,10 @@ function App() {
   // 프로필 정보 + 사진 저장
   const handleProfileSave = () => {
     // 1. 텍스트 정보 먼저 업데이트
+    const authHeaders = authHeader ? { Authorization: authHeader } : {};
     fetch("http://localhost:8080/api/profile", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify(myInfo)
     })
     .then(res => res.json())
@@ -65,6 +96,7 @@ function App() {
         fileData.append("file", profileFile);
         fetch(`http://localhost:8080/api/profile/${savedProfile.id}/upload`, {
           method: "POST",
+          headers: authHeader ? { Authorization: authHeader } : {},
           body: fileData
         })
         .then(res => res.json())
@@ -92,7 +124,7 @@ function App() {
     const idList = items.map(p => p.id);
     fetch("http://localhost:8080/api/projects/reorder", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(authHeader ? { Authorization: authHeader } : {}) },
       body: JSON.stringify(idList)
     });
   };
@@ -104,7 +136,7 @@ function App() {
 
     fetch(url, {
       method: method,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(authHeader ? { Authorization: authHeader } : {}) },
       body: JSON.stringify(formData)
     })
     .then(res => res.json())
@@ -112,7 +144,7 @@ function App() {
       if (selectedFile) {
         const fileData = new FormData();
         fileData.append("file", selectedFile);
-        fetch(`http://localhost:8080/api/projects/${saved.id}/upload`, { method: "POST", body: fileData })
+        fetch(`http://localhost:8080/api/projects/${saved.id}/upload`, { method: "POST", headers: authHeader ? { Authorization: authHeader } : {}, body: fileData })
           .then(() => { alert("프로젝트 저장 완료!"); finishSubmit(); });
       } else {
         alert("프로젝트 저장 완료!");
@@ -123,7 +155,7 @@ function App() {
 
   const handleDelete = (id) => {
     if (window.confirm("정말 삭제하시겠습니까?")) {
-      fetch(`http://localhost:8080/api/projects/${id}`, { method: "DELETE" }).then(() => fetchData());
+      fetch(`http://localhost:8080/api/projects/${id}`, { method: "DELETE", headers: authHeader ? { Authorization: authHeader } : {} }).then(() => fetchData());
     }
   };
 
@@ -138,11 +170,32 @@ function App() {
       <nav className="navbar navbar-dark bg-dark sticky-top shadow-sm">
         <div className="container">
           <span className="navbar-brand fw-bold">🚀 ADMIN PORTFOLIO</span>
-          <button className={`btn btn-sm ${isAdmin ? 'btn-success' : 'btn-outline-light'}`} onClick={() => setIsAdmin(!isAdmin)}>
+          <button className={`btn btn-sm ${isAdmin ? 'btn-success' : 'btn-outline-light'}`} onClick={handleAdminToggle}>
             {isAdmin ? "🔓 관리자 모드 ON" : "🔒 보기 모드"}
           </button>
         </div>
       </nav>
+
+      {showLoginModal && (
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <div className="modal-dialog modal-sm modal-dialog-centered">
+            <div className="modal-content p-3">
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title">관리자 로그인</h5>
+                <button className="btn-close" onClick={() => setShowLoginModal(false)}></button>
+              </div>
+              <form className="modal-body" onSubmit={handleLoginSubmit}>
+                <div className="mb-2"><input className="form-control" placeholder="아이디" value={adminUser} onChange={e => setAdminUser(e.target.value)} required /></div>
+                <div className="mb-3"><input type="password" className="form-control" placeholder="비밀번호" value={adminPass} onChange={e => setAdminPass(e.target.value)} required /></div>
+                <div className="d-flex gap-2 justify-content-end">
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowLoginModal(false)}>취소</button>
+                  <button type="submit" className="btn btn-primary">로그인</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 히어로 섹션 (프로필 이미지 및 정보) */}
       <header className="bg-white border-bottom py-5 mb-5 shadow-sm">
