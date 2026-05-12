@@ -52,22 +52,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow frontend origin from env var FRONTEND_URL (can be comma-separated).
-        // Use exact origins like https://your-app.vercel.app or patterns like https://*.vercel.app.
+        // IMPORTANT: CORS only accepts exact origins (not wildcard patterns like https://*.vercel.app).
+        // Use exact frontend domain(s) separated by commas, or set FRONTEND_URL env var.
         String frontendEnv = System.getenv("FRONTEND_URL");
-        if (frontendEnv == null || frontendEnv.isBlank()) frontendEnv = "http://localhost:3000";
+        if (frontendEnv == null || frontendEnv.isBlank()) {
+            // Default: local dev + current production Vercel domain
+            frontendEnv = "http://localhost:3000,https://fullstack-m0uxv9zzw-junyoungkims-projects.vercel.app";
+        }
         String[] origins = frontendEnv.split("\\s*,\\s*");
         java.util.List<String> allowed = new java.util.ArrayList<>(Arrays.asList(origins));
-        // Always allow Vercel preview subdomains to avoid changing preview origins per-deploy
-        if (!allowed.contains("https://*.vercel.app")) {
-            allowed.add("https://*.vercel.app");
-        }
-        // Also allow the deployed backend domain (helps when frontend and backend share origins)
-        if (!allowed.contains("https://portfolio-my18.onrender.com")) {
-            allowed.add("https://portfolio-my18.onrender.com");
-        }
-        System.out.println("CORS allowed origin patterns: " + allowed);
-        configuration.setAllowedOriginPatterns(allowed);
+        
+        System.out.println("[CORS Config] Allowed origins: " + allowed);
+        configuration.setAllowedOrigins(allowed);  // Use setAllowedOrigins for exact matching
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
