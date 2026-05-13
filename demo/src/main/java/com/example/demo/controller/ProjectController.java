@@ -37,7 +37,7 @@ public class ProjectController {
 
     @GetMapping // GET 방식으로 요청이 오면 실행
     public List<Project> getAllProjects() {
-        return projectRepository.findAll(); // DB에 있는 모든 프로젝트를 가져와서 반환!
+        return projectRepository.findAllByOrderBySeqAsc(); // DB에 있는 모든 프로젝트를 가져와서 반환!
     }
 
     // 새로운 프로젝트 저장 (Create)

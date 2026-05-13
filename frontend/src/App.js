@@ -28,18 +28,45 @@ function App() {
   const [showDetail, setShowDetail] = useState(null); 
 
   // --- [데이터 가져오기] ---
+  const fetchJson = async (url, options) => {
+    const res = await fetch(url, options);
+    const contentType = res.headers.get('content-type') || '';
+    let payload;
+    if (contentType.includes('application/json')) {
+      payload = await res.json().catch(() => null);
+    } else {
+      payload = await res.text().catch(() => null);
+    }
+    if (!res.ok) {
+      const message = typeof payload === 'string' ? payload : JSON.stringify(payload);
+      throw new Error(`${res.status} ${res.statusText}${message ? `: ${message}` : ''}`);
+    }
+    return payload;
+  };
+
+  const fetchProjectsWithRetry = async (attemptsLeft) => {
+    try {
+      const data = await fetchJson(`${API_BASE_URL}/api/projects`);
+      const list = Array.isArray(data) ? data : [];
+      setProjects(list.slice().sort((a, b) => (a?.seq ?? 0) - (b?.seq ?? 0)));
+    } catch (err) {
+      if (attemptsLeft > 0) {
+        setTimeout(() => { fetchProjectsWithRetry(attemptsLeft - 1); }, 1500);
+        return;
+      }
+      console.error("프로젝트 로드 실패:", err);
+      setProjects([]);
+    }
+  };
+
   const fetchData = () => {
     // 프로필 정보 로드
-    fetch(`${API_BASE_URL}/api/profile`)
-      .then(res => res.json())
-      .then(data => setMyInfo(data))
+    fetchJson(`${API_BASE_URL}/api/profile`)
+      .then(data => setMyInfo(data || {}))
       .catch(err => console.error("프로필 로드 실패:", err));
 
     // 프로젝트 목록 로드 (순서 정렬)
-    fetch(`${API_BASE_URL}/api/projects`)
-      .then(res => res.json())
-      .then(data => setProjects(data.sort((a, b) => a.seq - b.seq)))
-      .catch(err => console.error("프로젝트 로드 실패:", err));
+    fetchProjectsWithRetry(2);
   };
 
   useEffect(() => { fetchData(); }, []);
