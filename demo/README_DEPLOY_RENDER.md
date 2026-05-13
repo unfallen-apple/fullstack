@@ -26,6 +26,10 @@ This project can be deployed to Render.com without Docker. This guide shows the 
    - `DB_USER` = `<db user>` (optional if included in JDBC URL)
    - `DB_PASSWORD` = `<db password>` (optional if included in JDBC URL)
    - `FRONTEND_URL` = `https://<your-frontend-domain>` (for CORS)
+   - `FRONTEND_URL` = `https://junyoungkim.vercel.app` (for CORS)
+   - `SUPABASE_URL` = `https://<your-project>.supabase.co`
+   - `SUPABASE_KEY` = `<your-service-role-key>`
+   - `SUPABASE_BUCKET` = `uploads`
    - `SPRING_PROFILES_ACTIVE` = `prod` (optional)
 
 5. Health check path (Render settings): set to `/actuator/health` (render will use it to check app readiness).

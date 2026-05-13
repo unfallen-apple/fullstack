@@ -1,6 +1,12 @@
 package com.example.demo.controller; // 본인의 패키지 경로에 맞게 수정
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,17 +57,39 @@ public class ProfileController {
     public Profile uploadProfileImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("프로필을 찾을 수 없습니다."));
-
-        // 프로젝트 업로드와 동일한 위치에 저장하도록 통일
-        String uploadDir = System.getProperty("user.dir") + "/uploads/";
-        Path uploadPath = Paths.get(uploadDir);
-        Files.createDirectories(uploadPath);
-
         String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        Path dest = uploadPath.resolve(fileName);
-        Files.write(dest, file.getBytes());
 
-        profile.setProfileImg("/uploads/" + fileName);
+        // If Supabase env vars are present, upload to Supabase Storage and set public URL.
+        String supabaseUrl = System.getenv("SUPABASE_URL");
+        String supabaseKey = System.getenv("SUPABASE_KEY");
+        String supabaseBucket = System.getenv("SUPABASE_BUCKET");
+        if (supabaseUrl != null && supabaseKey != null && supabaseBucket != null) {
+            try {
+                // Upload via PUT to /storage/v1/object/{bucket}/{path}
+                String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+                URI uri = URI.create(supabaseUrl + "/storage/v1/object/" + supabaseBucket + "/" + encodedName);
+                HttpRequest req = HttpRequest.newBuilder(uri)
+                        .header("Authorization", "Bearer " + supabaseKey)
+                        .header("x-upsert", "true")
+                        .header("Content-Type", file.getContentType() == null ? "application/octet-stream" : file.getContentType())
+                        .PUT(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
+                        .build();
+                HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.discarding());
+                String publicUrl = supabaseUrl + "/storage/v1/object/public/" + supabaseBucket + "/" + encodedName;
+                profile.setProfileImg(publicUrl);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException(e);
+            }
+        } else {
+            // Fallback to local filesystem (non-persistent on ephemeral hosts)
+            String uploadDir = System.getProperty("user.dir") + "/uploads/";
+            Path uploadPath = Paths.get(uploadDir);
+            Files.createDirectories(uploadPath);
+            Path dest = uploadPath.resolve(fileName);
+            Files.write(dest, file.getBytes());
+            profile.setProfileImg("/uploads/" + fileName);
+        }
         return profileRepository.save(profile);
     }
 }

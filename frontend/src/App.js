@@ -207,7 +207,7 @@ function App() {
             <div className="col-md-3 text-center mb-4 mb-md-0 position-relative">
               <div className="position-relative d-inline-block">
                 <img 
-                  src={profilePreview || (myInfo.profileImg ? `${API_BASE_URL}${myInfo.profileImg}` : "https://via.placeholder.com/180")} 
+                  src={profilePreview || (myInfo.profileImg ? `${API_BASE_URL}${myInfo.profileImg}` : "/placeholder-180.svg")} 
                   alt="Profile" 
                   className="rounded-circle shadow border border-5 border-light" 
                   style={{ width: '180px', height: '180px', objectFit: 'cover' }}

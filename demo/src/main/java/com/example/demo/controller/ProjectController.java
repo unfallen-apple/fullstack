@@ -1,6 +1,12 @@
 package com.example.demo.controller;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -70,21 +76,37 @@ public class ProjectController {
     public Project uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("프로젝트를 찾을 수 없습니다."));
-
-        // 1. 파일을 저장할 경로 설정 (실행 환경에 맞게 수정 필요)
-        String uploadDir = System.getProperty("user.dir") + "/uploads/";
-        File dir = new File(uploadDir);
-        if (!dir.exists()) dir.mkdirs(); // 폴더가 없으면 생성
-
-        // 2. 파일 이름 중복 방지를 위해 UUID 생성
         String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        File dest = new File(uploadDir + fileName);
 
-        // 3. 실제 폴더에 파일 저장
-        file.transferTo(dest);
-
-        // 4. DB에는 파일명(혹은 경로)만 저장
-        project.setImageUrl("/uploads/" + fileName);
+        String supabaseUrl = System.getenv("SUPABASE_URL");
+        String supabaseKey = System.getenv("SUPABASE_KEY");
+        String supabaseBucket = System.getenv("SUPABASE_BUCKET");
+        if (supabaseUrl != null && supabaseKey != null && supabaseBucket != null) {
+            try {
+                String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+                URI uri = URI.create(supabaseUrl + "/storage/v1/object/" + supabaseBucket + "/" + encodedName);
+                HttpRequest req = HttpRequest.newBuilder(uri)
+                        .header("Authorization", "Bearer " + supabaseKey)
+                        .header("x-upsert", "true")
+                        .header("Content-Type", file.getContentType() == null ? "application/octet-stream" : file.getContentType())
+                        .PUT(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
+                        .build();
+                HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.discarding());
+                String publicUrl = supabaseUrl + "/storage/v1/object/public/" + supabaseBucket + "/" + encodedName;
+                project.setImageUrl(publicUrl);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException(e);
+            }
+        } else {
+            // Local fallback (ephemeral)
+            String uploadDir = System.getProperty("user.dir") + "/uploads/";
+            File dir = new File(uploadDir);
+            if (!dir.exists()) dir.mkdirs();
+            File dest = new File(uploadDir + fileName);
+            file.transferTo(dest);
+            project.setImageUrl("/uploads/" + fileName);
+        }
         return projectRepository.save(project);
     }
     
