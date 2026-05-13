@@ -3,7 +3,7 @@ services:
     name: portfolio-api
     runtime: docker
     rootDir: demo
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./demo/Dockerfile
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE

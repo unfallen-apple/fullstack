@@ -9,5 +9,5 @@ COPY . .
 RUN chmod +x gradlew
 RUN ./gradlew bootJar
 
-EXPOSE 8080
+EXPOSE 10000
 ENTRYPOINT ["sh", "-c", "java -Xmx512m -jar build/libs/app.jar"]
