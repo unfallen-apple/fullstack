@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,7 +25,6 @@ import com.example.demo.entity.Project;
 import com.example.demo.repository.ProjectRepository;
 
 @RestController // 이 클래스가 JSON 데이터를 주고받는 창구임을 선언
-@CrossOrigin(origins = "http://localhost:3000") // 리액트에서 오는 요청을 허용해줘!
 @RequestMapping("/api/projects") // 이 주소로 들어오는 요청을 처리함
 public class ProjectController {
 
