@@ -3,6 +3,12 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 function App() {
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+  const resolveUrl = (value) => {
+    if (!value) return '';
+    if (typeof value !== 'string') return '';
+    if (value.startsWith('http://') || value.startsWith('https://')) return value;
+    return `${API_BASE_URL}${value}`;
+  };
 
   // --- [상태 관리] ---
   const [projects, setProjects] = useState([]);
@@ -234,7 +240,7 @@ function App() {
             <div className="col-md-3 text-center mb-4 mb-md-0 position-relative">
               <div className="position-relative d-inline-block">
                 <img 
-                  src={profilePreview || (myInfo.profileImg ? `${API_BASE_URL}${myInfo.profileImg}` : "/placeholder-180.svg")} 
+                  src={profilePreview || (myInfo.profileImg ? resolveUrl(myInfo.profileImg) : "/placeholder-180.svg")} 
                   alt="Profile" 
                   className="rounded-circle shadow border border-5 border-light" 
                   style={{ width: '180px', height: '180px', objectFit: 'cover' }}
@@ -316,7 +322,7 @@ function App() {
                       <div className="col" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                         <div className={`card h-100 border-0 shadow-sm rounded-4 overflow-hidden ${snapshot.isDragging ? 'shadow-lg border-primary border' : ''}`} style={{ transition: '0.3s' }}>
                           <div style={{ height: '160px', backgroundColor: '#f8f9fa' }}>
-                            {p.imageUrl ? <img src={`${API_BASE_URL}${p.imageUrl}`} className="w-100 h-100" style={{ objectFit: 'cover' }} alt="" /> : <div className="d-flex align-items-center justify-content-center h-100 text-muted small">No Image</div>}
+                            {p.imageUrl ? <img src={resolveUrl(p.imageUrl)} className="w-100 h-100" style={{ objectFit: 'cover' }} alt="" /> : <div className="d-flex align-items-center justify-content-center h-100 text-muted small">No Image</div>}
                           </div>
                           <div className="card-body p-3 d-flex flex-column">
                             <h6 className="card-title fw-bold mb-2 text-truncate">{p.title}</h6>
