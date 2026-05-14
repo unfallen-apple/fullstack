@@ -79,7 +79,11 @@ function App() {
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => {
     const onScroll = () => {
-      setNavCollapsed(window.scrollY > 80);
+      const y = window.scrollY;
+      setNavCollapsed((prev) => {
+        if (prev) return y > 70;
+        return y > 110;
+      });
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -346,7 +350,7 @@ function App() {
                             <p className="card-text text-muted mb-3" style={{ fontSize: '0.85rem', flexGrow: 1, display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
                             <div className="d-flex gap-2">
                               <button className="btn btn-outline-dark btn-sm flex-fill fw-bold" onClick={() => setShowDetail(p)}>자세히 보기</button>
-                              {p.linkUrl && <a href={p.linkUrl} target="_blank" rel="noreferrer" className="btn btn-dark btn-sm flex-fill fw-bold">Link</a>}
+                              {p.linkUrl && <a href={p.linkUrl} target="_blank" rel="noreferrer" className="btn btn-dark btn-sm flex-fill fw-bold project-link-btn">Link</a>}
                             </div>
                           </div>
                           {isAdmin && (
@@ -396,7 +400,7 @@ function App() {
 
       {/* 상세 보기 팝업 모달 */}
       {showDetail && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)' }}>
+        <div className="modal show d-block detail-modal" style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)' }}>
           <div className="modal-dialog modal-dialog-centered modal-lg">
             <div className="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
               <div className="modal-header border-0 bg-light p-4">
