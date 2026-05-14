@@ -65,6 +65,9 @@ public class ProjectController {
         project.setTitle(projectDetails.getTitle());
         project.setTechStack(projectDetails.getTechStack());
         project.setDescription(projectDetails.getDescription());
+        project.setLinkUrl(projectDetails.getLinkUrl());
+        project.setLongDescription(projectDetails.getLongDescription());
+        project.setSeq(projectDetails.getSeq());
 
         // 3. 다시 저장(업데이트)합니다.
         return projectRepository.save(project);
