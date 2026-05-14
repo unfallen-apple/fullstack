@@ -50,15 +50,17 @@ code {
 }
 
 .site-navbar__admin-toggle--stealth {
-  opacity: 0.02;
+  opacity: 0.1;
   border-color: transparent !important;
   background-color: transparent !important;
+  transition: opacity 180ms ease, transform 180ms ease, border-color 180ms ease, background-color 180ms ease !important;
 }
 
-.site-navbar:hover .site-navbar__admin-toggle--stealth,
-.site-navbar:focus-within .site-navbar__admin-toggle--stealth {
-  opacity: 0.65;
-  border-color: rgba(255, 255, 255, 0.45) !important;
+.site-navbar__admin-toggle--stealth:hover,
+.site-navbar__admin-toggle--stealth:focus-visible {
+  opacity: 0.75;
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.65) !important;
 }
 
 .project-card {
@@ -72,21 +74,21 @@ code {
 .project-card::after {
   content: "";
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 58%;
   border-radius: inherit;
-  padding: 3px; /* 네온 테두리 두께 */
-  background: linear-gradient(45deg, #00f5ff, #8257ff, #00f5ff);
-  background-size: 200% 200%;
-
-  /* 테두리만 남기는 마스크 기법 */
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-
-  /* 초기 상태: 투명하고 작게 (점에서 시작) */
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  background: linear-gradient(180deg, rgba(0, 245, 255, 0.95) 0%, rgba(45, 125, 255, 0.88) 42%, rgba(130, 87, 255, 0.05) 100%);
+  background-size: 100% 200%;
+  background-position: 50% 100%;
   opacity: 0;
-  transform: scale(0.85);
-  transition: all 500ms cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 260ms ease, background-position 520ms cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  filter: drop-shadow(0 0 10px rgba(0, 245, 255, 0.25)) drop-shadow(0 0 18px rgba(45, 125, 255, 0.2));
 }
 
 .project-card > * {
@@ -101,11 +103,11 @@ code {
 }
 
 .project-card:hover::after {
-  /* 호버 시: 커지면서 나타나고, 그라데이션이 움직임 */
   opacity: 1;
-  transform: scale(1);
+  transform: scaleY(1);
+  background-position: 50% 0%;
   animation: gradientMove 3s linear infinite;
-  filter: drop-shadow(0 0 12px rgba(0, 245, 255, 0.6));
+  filter: drop-shadow(0 0 14px rgba(0, 245, 255, 0.55)) drop-shadow(0 0 22px rgba(45, 125, 255, 0.35));
 }
 
 .project-link-btn {
@@ -115,9 +117,10 @@ code {
 
 .project-link-btn:hover,
 .project-link-btn:focus-visible {
-  background-color: #ffffff !important;
-  color: #212529 !important;
-  border-color: #212529 !important;
+  background-color: #0d6efd !important;
+  color: #ffffff !important;
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
 }
 
 .detail-modal {
