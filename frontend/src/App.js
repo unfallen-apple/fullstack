@@ -350,7 +350,7 @@ function App() {
                     <label className="form-label fw-bold mb-0">팝업용 상세 내용</label>
                     <button type="button" className="btn btn-outline-secondary btn-sm" onClick={loadTemplateMarkdown}>📝 템플릿 불러오기</button>
                   </div>
-                  <textarea className="form-control" rows="8" placeholder="마크다운 형식으로 작성해주세요" value={formData.longDescription} onChange={e => setFormData({...formData, longDescription: e.target.value})} />
+                  <textarea className="form-control" rows="15" placeholder="마크다운 형식으로 작성해주세요" value={formData.longDescription} onChange={e => setFormData({...formData, longDescription: e.target.value})} style={{minHeight: '400px'}} />
                 </div>
                 <div className="col-md-6"><input type="file" className="form-control" onChange={e => setSelectedFile(e.target.files[0])} /></div>
                 <div className="col-12 pt-2"><button type="submit" className="btn btn-dark px-5 fw-bold rounded-pill">프로젝트 등록</button></div>
@@ -391,7 +391,7 @@ function App() {
                           </div>
                           {isAdmin && (
                             <div className="card-footer bg-white border-0 d-flex gap-1 pb-3 pt-0 px-3">
-                              <button className="btn btn-light btn-sm flex-grow-1 border" onClick={() => { setEditingId(p.id); setFormData(p); window.scrollTo(0,0); }}>수정</button>
+                              <button className="btn btn-light btn-sm flex-grow-1 border" onClick={() => { setEditingId(p.id); setFormData({ title: p.title || '', techStack: p.techStack || '', description: p.description || '', linkUrl: p.linkUrl || '', longDescription: p.longDescription || '' }); window.scrollTo(0,0); }}>수정</button>
                               <button className="btn btn-light text-danger btn-sm flex-grow-1 border" onClick={() => handleDelete(p.id)}>삭제</button>
                             </div>
                           )}
@@ -437,7 +437,7 @@ function App() {
       {/* 상세 보기 팝업 모달 */}
       {showDetail && (
         <div className="modal show d-block detail-modal" style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)' }}>
-          <div className="modal-dialog modal-dialog-centered modal-lg">
+          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '800px' }}>
             <div className="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
               <div className="modal-header border-0 bg-light p-4">
                 <h5 className="modal-title fw-bold">{showDetail.title}</h5>
