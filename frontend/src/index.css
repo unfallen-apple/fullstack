@@ -82,14 +82,14 @@ code {
   content: "";
   position: absolute;
   /* place outlines slightly outside the card so they don't cover interior */
-  inset: -6px;
-  border-radius: calc(var(--bs-border-radius, 0.5rem) + 6px);
-  padding: 4px; /* outline thickness */
+  inset: -5px;
+  border-radius: calc(var(--bs-border-radius, 0.5rem) + 5px);
+  padding: 3px; /* slightly reduced outline thickness */
   opacity: 0;
   transform: scaleY(0);
   transform-origin: bottom;
-  /* slower fill: ~2x previous speed */
-  transition: transform 2040ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 380ms ease, background-position 2040ms cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  /* remove transform transition; use keyframe animation for non-linear speed */
+  transition: opacity 360ms ease, background-position 2040ms cubic-bezier(0.2,0.8,0.2,1) !important;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -98,7 +98,7 @@ code {
 }
 
 .project-card::before {
-  /* blue outline (left/outer) */
+  /* blue outline */
   background: linear-gradient(90deg, rgba(0,245,255,0.95), rgba(0,160,255,0.6));
   background-size: 100% 200%;
   background-position: 50% 100%;
@@ -106,9 +106,9 @@ code {
 }
 
 .project-card::after {
-  /* purple outline (right/inner) */
-  inset: -10px;
-  border-radius: calc(var(--bs-border-radius, 0.5rem) + 10px);
+  /* purple outline (slightly further out) */
+  inset: -8px;
+  border-radius: calc(var(--bs-border-radius, 0.5rem) + 8px);
   background: linear-gradient(90deg, rgba(130,87,255,0.95), rgba(120,60,255,0.5));
   background-size: 100% 200%;
   background-position: 50% 100%;
@@ -129,9 +129,16 @@ code {
 .project-card:hover::before,
 .project-card:hover::after {
   opacity: 1;
-  transform: scaleY(1);
+  /* use a keyframe animation so fill starts slow and accelerates upward */
+  animation: outlineFillScale 6s forwards cubic-bezier(0.2,0.8,0.2,1), gradientMove 6s linear infinite;
   background-position: 50% 0%;
-  animation: gradientMove 6s linear infinite;
+}
+
+@keyframes outlineFillScale {
+  0% { transform: scaleY(0); }
+  20% { transform: scaleY(0.12); }
+  55% { transform: scaleY(0.55); }
+  100% { transform: scaleY(1); }
 }
 
 .project-link-btn {
