@@ -136,8 +136,8 @@ code {
 
 .project-card:hover::after {
   opacity: 1;
-  /* run after blue layer so total fill is 1.0s (0.6s + 0.4s) */
-  animation: outlineReveal 0.4s forwards ease-in 0.6s, gradientMove 1s linear infinite;
+  /* start when blue is around midpoint; keep total feel close to 1s */
+  animation: outlineReveal 0.7s forwards ease-in 0.3s, gradientMove 1s linear infinite;
   background-position: 50% 0%;
 }
 
