@@ -11,3 +11,101 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.site-navbar {
+  height: 56px;
+  overflow: hidden;
+  transition: height 220ms ease, box-shadow 220ms ease;
+}
+
+.site-navbar__inner {
+  height: 56px;
+  align-items: center;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.site-navbar--collapsed {
+  height: 10px;
+  box-shadow: none !important;
+}
+
+.site-navbar--collapsed .site-navbar__inner {
+  opacity: 0;
+  transform: translateY(-14px);
+  pointer-events: none;
+}
+
+.site-navbar--collapsed:hover,
+.site-navbar--collapsed:focus-within {
+  height: 56px;
+}
+
+.site-navbar--collapsed:hover .site-navbar__inner,
+.site-navbar--collapsed:focus-within .site-navbar__inner {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.site-navbar__admin-toggle--stealth {
+  opacity: 0.02;
+  border-color: transparent !important;
+  background-color: transparent !important;
+}
+
+.site-navbar:hover .site-navbar__admin-toggle--stealth,
+.site-navbar:focus-within .site-navbar__admin-toggle--stealth {
+  opacity: 0.65;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.project-card {
+  position: relative;
+  isolation: isolate;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.project-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from 180deg at 50% 100%, rgba(0, 245, 255, 0), rgba(0, 245, 255, 0.95), rgba(130, 87, 255, 0.95), rgba(0, 245, 255, 0));
+  opacity: 0;
+  transform: scaleY(0.4);
+  transform-origin: bottom;
+  transition: opacity 180ms ease, transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px rgba(0, 245, 255, 0.25)) drop-shadow(0 0 14px rgba(130, 87, 255, 0.18));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.project-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.project-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
+.project-card:hover::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-navbar,
+  .site-navbar__inner,
+  .project-card,
+  .project-card::before {
+    transition: none !important;
+  }
+  .project-card:hover {
+    transform: none;
+  }
+}

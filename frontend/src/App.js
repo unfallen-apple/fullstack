@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 function App() {
@@ -13,6 +13,7 @@ function App() {
   // --- [상태 관리] ---
   const [projects, setProjects] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [adminUser, setAdminUser] = useState('');
   const [adminPass, setAdminPass] = useState('');
@@ -34,7 +35,7 @@ function App() {
   const [showDetail, setShowDetail] = useState(null); 
 
   // --- [데이터 가져오기] ---
-  const fetchJson = async (url, options) => {
+  const fetchJson = useCallback(async (url, options) => {
     const res = await fetch(url, options);
     const contentType = res.headers.get('content-type') || '';
     let payload;
@@ -48,9 +49,9 @@ function App() {
       throw new Error(`${res.status} ${res.statusText}${message ? `: ${message}` : ''}`);
     }
     return payload;
-  };
+  }, []);
 
-  const fetchProjectsWithRetry = async (attemptsLeft) => {
+  const fetchProjectsWithRetry = useCallback(async (attemptsLeft) => {
     try {
       const data = await fetchJson(`${API_BASE_URL}/api/projects`);
       const list = Array.isArray(data) ? data : [];
@@ -63,9 +64,9 @@ function App() {
       console.error("프로젝트 로드 실패:", err);
       setProjects([]);
     }
-  };
+  }, [API_BASE_URL, fetchJson]);
 
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     // 프로필 정보 로드
     fetchJson(`${API_BASE_URL}/api/profile`)
       .then(data => setMyInfo(data || {}))
@@ -73,9 +74,17 @@ function App() {
 
     // 프로젝트 목록 로드 (순서 정렬)
     fetchProjectsWithRetry(2);
-  };
+  }, [API_BASE_URL, fetchJson, fetchProjectsWithRetry]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    const onScroll = () => {
+      setNavCollapsed(window.scrollY > 80);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleAdminToggle = () => {
     if (isAdmin) {
@@ -201,12 +210,15 @@ function App() {
 
   return (
     <div className="bg-light min-vh-100 d-flex flex-column">
-      {/* 상단 네비게이션 */}
-      <nav className="navbar navbar-dark bg-dark sticky-top shadow-sm">
-        <div className="container">
-          <span className="navbar-brand fw-bold">🚀 ADMIN PORTFOLIO</span>
-          <button className={`btn btn-sm ${isAdmin ? 'btn-success' : 'btn-outline-light'}`} onClick={handleAdminToggle}>
-            {isAdmin ? "🔓 관리자 모드 ON" : "🔒 보기 모드"}
+      <nav className={`navbar navbar-dark bg-dark sticky-top shadow-sm site-navbar ${navCollapsed ? 'site-navbar--collapsed' : ''}`}>
+        <div className="container site-navbar__inner">
+          <span className="navbar-brand fw-bold site-navbar__brand">💡 Junyoung's Dev Space</span>
+          <button
+            className={`btn btn-sm ${isAdmin ? 'btn-success' : 'btn-outline-light'} site-navbar__admin-toggle ${isAdmin ? '' : 'site-navbar__admin-toggle--stealth'}`}
+            onClick={handleAdminToggle}
+            aria-label="관리자 로그인"
+          >
+            {isAdmin ? "🔓 관리자" : "⚙"}
           </button>
         </div>
       </nav>
@@ -320,7 +332,7 @@ function App() {
                   <Draggable key={p.id} draggableId={String(p.id)} index={index} isDragDisabled={!isAdmin}>
                     {(provided, snapshot) => (
                       <div className="col" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                        <div className={`card h-100 border-0 shadow-sm rounded-4 overflow-hidden ${snapshot.isDragging ? 'shadow-lg border-primary border' : ''}`} style={{ transition: '0.3s' }}>
+                        <div className={`card h-100 border-0 shadow-sm rounded-4 overflow-hidden project-card ${snapshot.isDragging ? 'shadow-lg border-primary border' : ''}`}>
                           <div style={{ height: '160px', backgroundColor: '#f8f9fa' }}>
                             {p.imageUrl ? <img src={resolveUrl(p.imageUrl)} className="w-100 h-100" style={{ objectFit: 'cover' }} alt="" /> : <div className="d-flex align-items-center justify-content-center h-100 text-muted small">No Image</div>}
                           </div>
