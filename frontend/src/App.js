@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import './markdown.css';
 
 function App() {
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
@@ -212,6 +215,33 @@ function App() {
     setEditingId(null); setSelectedFile(null); fetchData();
   };
 
+  const loadTemplateMarkdown = () => {
+    const template = `### 🗓 프로젝트 개요
+- **기간:** 202X.XX ~ 202X.XX
+- **주최/발의처:** 
+- **내 역할:** 백엔드 개발 / 설계
+
+---
+
+### 🏗 서비스 아키텍처 & 목표
+(여기에 아키텍처 이미지 링크 삽입)
+- **주요 목표 1:** 
+- **주요 목표 2:** 
+
+---
+
+### ⚙️ 상세 역할 및 구현 내용
+- 
+- 
+
+---
+
+### 🏆 성과 및 트러블슈팅
+- **성과:** 
+- **문제 해결:** `;
+    setFormData({...formData, longDescription: template});
+  };
+
   return (
     <div className="bg-light min-vh-100 d-flex flex-column">
       <nav className={`navbar navbar-dark bg-dark sticky-top shadow-sm site-navbar ${navCollapsed ? 'site-navbar--collapsed' : ''}`}>
@@ -315,7 +345,13 @@ function App() {
                 <div className="col-md-4"><input type="text" className="form-control" placeholder="기술 스택 (쉼표 구분)" value={formData.techStack} onChange={e => setFormData({...formData, techStack: e.target.value})} /></div>
                 <div className="col-md-4"><input type="url" className="form-control" placeholder="링크 (https://...)" value={formData.linkUrl} onChange={e => setFormData({...formData, linkUrl: e.target.value})} /></div>
                 <div className="col-12"><textarea className="form-control" placeholder="짧은 요약" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} /></div>
-                <div className="col-12"><textarea className="form-control" rows="3" placeholder="팝업용 상세 내용" value={formData.longDescription} onChange={e => setFormData({...formData, longDescription: e.target.value})} /></div>
+                <div className="col-12">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <label className="form-label fw-bold mb-0">팝업용 상세 내용</label>
+                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={loadTemplateMarkdown}>📝 템플릿 불러오기</button>
+                  </div>
+                  <textarea className="form-control" rows="8" placeholder="마크다운 형식으로 작성해주세요" value={formData.longDescription} onChange={e => setFormData({...formData, longDescription: e.target.value})} />
+                </div>
                 <div className="col-md-6"><input type="file" className="form-control" onChange={e => setSelectedFile(e.target.files[0])} /></div>
                 <div className="col-12 pt-2"><button type="submit" className="btn btn-dark px-5 fw-bold rounded-pill">프로젝트 등록</button></div>
               </form>
@@ -413,8 +449,14 @@ function App() {
                     <span key={i} className="badge bg-primary px-3 py-2">#{s.trim()}</span>
                   ))}
                 </div>
-                <div className="bg-light p-4 rounded-4" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.8', fontSize: '1rem', color: '#333' }}>
-                  {showDetail.longDescription || "등록된 상세 설명이 없습니다."}
+                <div className="bg-light p-4 rounded-4" style={{ lineHeight: '1.8', fontSize: '1rem', color: '#333' }}>
+                  {showDetail.longDescription ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} className="markdown-content">
+                      {showDetail.longDescription}
+                    </ReactMarkdown>
+                  ) : (
+                    "등록된 상세 설명이 없습니다."
+                  )}
                 </div>
               </div>
               <div className="modal-footer border-0 p-4">
