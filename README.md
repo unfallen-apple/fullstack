@@ -50,6 +50,20 @@ CI/CD 환경 설정: GitHub Push 시 Vercel(프론트) 및 Cloudtype(백엔드) 
 
 해결: GitHub Actions의 cron 스케줄러를 활용해 매일 아침 자동으로 서버를 깨우는 파이프라인을 구축했습니다. 단순 API 호출로는 잠든 서버를 깨울 수 없다는 점을 파악하고, cloudtype-github-actions/deploy를 이용해 '전체 설정(YAML) 기반 강제 재배포 매크로'를 작성했습니다. 보안을 위해 환경변수(DB 정보 등)는 GitHub Secrets로 격리 주입하여, 보안성과 편의성을 모두 챙긴 유사 무중단 서비스를 구현했습니다.
 
+4. 클라우드 컨테이너의 휘발성 디스크 문제 해결 (Local ➡️ Supabase Storage)
+문제: Cloudtype 프리티어 특성상 매일 서버가 재배포되는데, 이때 서버 로컬 디스크(uploads/ 폴더)에 저장된 사용자 업로드 이미지가 모두 삭제되는 현상 발생.
+
+원인 분석: 컨테이너 기반 배포 환경은 재빌드 시 내부 스토리지가 초기화되는 휘발성(Ephemeral) 구조임을 파악. 데이터 영속성(Persistence) 보장을 위해 외부 스토리지 도입이 필수적이었음.
+
+해결: * 기존 로컬 저장 로직을 Supabase Storage API 연동 방식으로 전면 개편.
+
+보안 강화를 위해 Supabase API Key와 URL 정보를 GitHub Secrets에 격리 저장 후, CI/CD 파이프라인(GitHub Actions)을 통해 런타임에 동적으로 주입.
+
+Storage RLS(Row Level Security) Policy를 설정하여 외부 호출 권한을 제어함으로써 이미지 조회 및 업로드 기능을 안정화함.
+
+결과: 서버가 재배포되거나 중지 후 재시작되어도 업로드된 미디어 데이터가 영구적으로 보존되는 인프라 구조 확립.
+
+
 ## 🚧 작업 예정 사항 (To-do List)
 [ ] Supabase Storage 연동 (진행 중): 클라우드 컨테이너의 휘발성(재배포 시 업로드 폴더 초기화) 문제를 해결하기 위해, 이미지 파일을 외부 저장소(Storage)로 업로드하고 URL을 렌더링하는 구조로 전면 개편.
 
