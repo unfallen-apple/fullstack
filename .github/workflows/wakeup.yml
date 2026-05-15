@@ -13,14 +13,13 @@ jobs:
   wakeup:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          
-      - name: Login to Cloudtype
-        # -p 옵션: 패키지를 명시하고 ctp 명령어를 실행
-        run: npx -p @cloudtype/cli ctp login -t ${{ secrets.CLOUDTYPE_TOKEN }}
-        
-      - name: Start the Server
-        run: npx -p @cloudtype/cli ctp start fastjjune/kimjunyoung/kimjunyoung
+      - name: Wake backend with HTTP request
+        run: |
+          curl --fail --silent --show-error \
+            --location \
+            --retry 5 \
+            --retry-delay 10 \
+            --retry-all-errors \
+            --max-time 120 \
+            https://port-0-kimjunyoung-mp46398g3f283d23.sel3.cloudtype.app/actuator/health \
+            > /dev/null
