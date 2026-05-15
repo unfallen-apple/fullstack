@@ -30,7 +30,7 @@ jobs:
           stage: main
           yaml: |
             name: kimjunyoung
-            app: java-springboot
+            app: "java@21"
             options:
               git:
                 branch: main
