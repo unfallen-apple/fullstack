@@ -13,28 +13,16 @@ jobs:
   wakeup:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Connect repository to Cloudtype
-        uses: cloudtype-github-actions/connect@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.CLOUDTYPE_TOKEN }}
-          ghtoken: ${{ secrets.GHP_TOKEN }}
+          node-version: '20'
 
-      - name: Deploy to Cloudtype
-        uses: cloudtype-github-actions/deploy@v1
-        with:
-          token: ${{ secrets.CLOUDTYPE_TOKEN }}
-          project: "@fastjjune/kimjunyoung"
-          stage: main
-          yaml: |
-            name: kimjunyoung
-            app: "java@21"
-            options:
-              git:
-                branch: main
-                url: https://github.com/${{ github.repository }}.git
-              install: ./gradlew bootJar
-              start: java -Dserver.port=$PORT -jar build/libs/app.jar
-              ports: 8080
+      - name: Install Cloudtype CLI locally
+        run: npm install @cloudtype/cli
+
+      - name: Login to Cloudtype
+        run: npx ctp login -t ${{ secrets.CLOUDTYPE_TOKEN }}
+
+      - name: Start the Server
+        run: npx ctp start fastjjune/kimjunyoung/kimjunyoung
