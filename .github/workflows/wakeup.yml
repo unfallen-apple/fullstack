@@ -35,6 +35,7 @@ jobs:
             name: kimjunyoung
             
             app: java@21
+            context: demo
             options:
               git:
                 branch: main
