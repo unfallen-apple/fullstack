@@ -1,0 +1,26 @@
+# Cloudtype의 무료 플랜의 경우 매일 03시~09시 사이에 서버가 자동으로 중지됩니다. 
+#이 워크플로우는 매일 19시, 20시, 21시, 22시, 23시, 0시에 서버를 깨우도록 설정되어 있습니다. 
+#또한, 수동으로도 실행할 수 있도록 workflow_dispatch 이벤트도 포함되어 있습니다.
+
+name: Wake up Cloudtype Server
+
+on:
+  schedule:
+    - cron: '5 22,0 * * *'  
+  # 내가 원할 때 수동으로 깃허브에서 버튼 눌러서 실행할 수 있게 하는 옵션
+  workflow_dispatch:
+
+jobs:
+  wakeup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Cloudtype CLI
+        run: npm install -g @cloudtype/cli
+        
+      - name: Login to Cloudtype
+        run: ctp login -t ${{ secrets.CLOUDTYPE_TOKEN }}
+        
+      - name: Start the Server
+        # 🚨 주의: 아래 명령어의 [스페이스명/프로젝트명/서비스명]을 본인 것에 맞게 수정하세요!
+        # 예시: ctp start fastjjune/kimjunyoung/backend
+        run: ctp start fastjjune/kimjunyoung/kimjunyoung
