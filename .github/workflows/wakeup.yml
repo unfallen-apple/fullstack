@@ -2,25 +2,40 @@
 #이 워크플로우는 매일 한국시간 07시와 09시에 서버를 깨우도록 설정되어 있습니다. 
 #또한, 수동으로도 실행할 수 있도록 workflow_dispatch 이벤트도 포함되어 있습니다.
 
-name: Wake up Cloudtype Server
+name: Wake up Cloudtype Server (Deploy Macro)
 
 on:
   schedule:
-    # 한국 시간 기준 아침 7시 5분, 9시 5분 실행
+    # 한국 시간 아침 7시 5분, 9시 5분에 강제 배포(기상)
     - cron: '5 22,0 * * *'
   workflow_dispatch:
 
 jobs:
-  wakeup:
+  wakeup-and-deploy:  
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Connect repository to Cloudtype
+        uses: cloudtype-github-actions/connect@v1
         with:
-          node-version: '20'
+          token: ${{ secrets.CLOUDTYPE_TOKEN }}
+          ghtoken: ${{ secrets.GHP_TOKEN }}
 
-      - name: Login to Cloudtype
-        run: npx -y -p @cloudtype/cli ctype login -t ${{ secrets.CLOUDTYPE_TOKEN }}
-
-      - name: Start the Server
-        run: npx -y -p @cloudtype/cli ctype start fastjjune/kimjunyoung/kimjunyoung
+      - name: Deploy to Cloudtype (Forces Wake Up)
+        uses: cloudtype-github-actions/deploy@v1
+        with:
+          token: ${{ secrets.CLOUDTYPE_TOKEN }}
+          project: fastjjune/kimjunyoung
+          stage: main
+          yaml: |
+            name: kimjunyoung
+            app: java-springboot
+            options:
+              git:
+                branch: main
+                url: https://github.com/${{ github.repository }}.git
+              install: ./gradlew bootJar
+              start: java -Dserver.port=$PORT -jar build/libs/app.jar
+              ports: 8080
