@@ -1,12 +1,11 @@
 # Cloudtype의 무료 플랜의 경우 매일 03시~09시 사이에 서버가 자동으로 중지됩니다. 
-#이 워크플로우는 매일 19시, 20시, 21시, 22시, 23시, 0시에 서버를 깨우도록 설정되어 있습니다. 
+#이 워크플로우는 매일 한국시간 07시와 09시에 서버를 깨우도록 설정되어 있습니다. 
 #또한, 수동으로도 실행할 수 있도록 workflow_dispatch 이벤트도 포함되어 있습니다.
 
 name: Wake up Cloudtype Server
 
 on:
   schedule:
-    # 한국 시간 기준 아침 7시 5분과 9시 5분에 기상
     - cron: '5 22,0 * * *'
   workflow_dispatch:
 
@@ -18,10 +17,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-        
+          
       - name: Login to Cloudtype
-        run: npx @cloudtype/cli login -t ${{ secrets.CLOUDTYPE_TOKEN }}
+        # -p 옵션: 패키지를 명시하고 ctp 명령어를 실행
+        run: npx -p @cloudtype/cli ctp login -t ${{ secrets.CLOUDTYPE_TOKEN }}
         
       - name: Start the Server
-        #  실제 경로 적용 완료
-        run: npx @cloudtype/cli start fastjjune/kimjunyoung/kimjunyoung
+        run: npx -p @cloudtype/cli ctp start fastjjune/kimjunyoung/kimjunyoung
