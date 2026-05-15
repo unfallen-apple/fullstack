@@ -82,6 +82,7 @@ public class ProjectController {
         String supabaseUrl = System.getenv("SUPABASE_URL");
         String supabaseKey = System.getenv("SUPABASE_KEY");
         String supabaseBucket = System.getenv("SUPABASE_BUCKET");
+        boolean production = isProductionProfile();
         if (supabaseUrl != null && supabaseKey != null && supabaseBucket != null) {
             try {
                 String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
@@ -92,7 +93,10 @@ public class ProjectController {
                         .header("Content-Type", file.getContentType() == null ? "application/octet-stream" : file.getContentType())
                         .PUT(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
                         .build();
-                HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.discarding());
+                HttpResponse<Void> response = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.discarding());
+                if (response.statusCode() >= 300) {
+                    throw new IOException("Supabase upload failed with status " + response.statusCode());
+                }
                 String publicUrl = supabaseUrl + "/storage/v1/object/public/" + supabaseBucket + "/" + encodedName;
                 project.setImageUrl(publicUrl);
             } catch (InterruptedException e) {
@@ -100,6 +104,9 @@ public class ProjectController {
                 throw new IOException(e);
             }
         } else {
+            if (production) {
+                throw new IOException("SUPABASE_URL, SUPABASE_KEY, and SUPABASE_BUCKET are required in production.");
+            }
             // Local fallback (ephemeral)
             String uploadDir = System.getProperty("user.dir") + "/uploads/";
             File dir = new File(uploadDir);
@@ -109,6 +116,11 @@ public class ProjectController {
             project.setImageUrl("/uploads/" + fileName);
         }
         return projectRepository.save(project);
+    }
+
+    private boolean isProductionProfile() {
+        String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+        return activeProfile != null && activeProfile.toLowerCase().contains("prod");
     }
     
     @PutMapping("/reorder")

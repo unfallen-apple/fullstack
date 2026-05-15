@@ -61,6 +61,7 @@ public class ProfileController {
         String supabaseUrl = System.getenv("SUPABASE_URL");
         String supabaseKey = System.getenv("SUPABASE_KEY");
         String supabaseBucket = System.getenv("SUPABASE_BUCKET");
+        boolean production = isProductionProfile();
         if (supabaseUrl != null && supabaseKey != null && supabaseBucket != null) {
             try {
                 // Upload via PUT to /storage/v1/object/{bucket}/{path}
@@ -72,7 +73,10 @@ public class ProfileController {
                         .header("Content-Type", file.getContentType() == null ? "application/octet-stream" : file.getContentType())
                         .PUT(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
                         .build();
-                HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.discarding());
+                HttpResponse<Void> response = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.discarding());
+                if (response.statusCode() >= 300) {
+                    throw new IOException("Supabase upload failed with status " + response.statusCode());
+                }
                 String publicUrl = supabaseUrl + "/storage/v1/object/public/" + supabaseBucket + "/" + encodedName;
                 profile.setProfileImg(publicUrl);
             } catch (InterruptedException e) {
@@ -80,6 +84,9 @@ public class ProfileController {
                 throw new IOException(e);
             }
         } else {
+            if (production) {
+                throw new IOException("SUPABASE_URL, SUPABASE_KEY, and SUPABASE_BUCKET are required in production.");
+            }
             // Fallback to local filesystem (non-persistent on ephemeral hosts)
             String uploadDir = System.getProperty("user.dir") + "/uploads/";
             Path uploadPath = Paths.get(uploadDir);
@@ -89,5 +96,10 @@ public class ProfileController {
             profile.setProfileImg("/uploads/" + fileName);
         }
         return profileRepository.save(profile);
+    }
+
+    private boolean isProductionProfile() {
+        String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+        return activeProfile != null && activeProfile.toLowerCase().contains("prod");
     }
 }

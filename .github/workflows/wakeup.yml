@@ -50,6 +50,12 @@ jobs:
                   value: ${{ secrets.DB_PASSWORD }}
                 - name: DB_USER
                   value: ${{ secrets.DB_USER }}
+                - name: SUPABASE_URL
+                  value: ${{ secrets.SUPABASE_URL }}
+                - name: SUPABASE_KEY
+                  value: ${{ secrets.SUPABASE_KEY }}
+                - name: SUPABASE_BUCKET
+                  value: uploads
                 - name: FRONTEND_URL
                   value: "https://junyoungkim.vercel.app"
                 - name: JDBC_DATABASE_URL
