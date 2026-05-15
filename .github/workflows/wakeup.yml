@@ -27,15 +27,19 @@ jobs:
         uses: cloudtype-github-actions/deploy@v1
         with:
           token: ${{ secrets.CLOUDTYPE_TOKEN }}
-          project: fastjjune/kimjunyoung
+         
+          project: "@fastjjune/kimjunyoung"
           stage: main
           yaml: |
+           
             name: kimjunyoung
-            app: java-springboot
+            
+            app: java@21
             options:
               git:
                 branch: main
                 url: https://github.com/${{ github.repository }}.git
+              
               install: ./gradlew bootJar
               start: java -Dserver.port=$PORT -jar build/libs/app.jar
               ports: 8080
